@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated Apr 17, 2006 3:45:28 PM by Hibernate Tools 3.1.0.beta4 -->
+<hibernate-mapping>
+    <class name="com.pingfit.dao.Error" table="error">
+        <cache usage="transactional"/>
+        <id name="errorid" type="int">
+            <column name="errorid" />
+            <generator class="native" />
+        </id>
+        <property name="level" type="int">
+            <column name="level" not-null="true" />
+        </property>
+        <property name="date" type="timestamp">
+            <column name="date" not-null="true" />
+        </property>
+        <property name="status" type="int">
+            <column name="status" not-null="true" />
+        </property>
+        <property name="error" type="text">
+            <column name="error" not-null="true" />
+        </property>
+        <property name="timesseen" type="int">
+            <column name="timesseen" not-null="true" />
+        </property>
+
+    </class>
+</hibernate-mapping>

@@ -1,0 +1,161 @@
+
+<project name="pingFitRed5" default="buildWar" basedir=".">
+  <description>
+        The core build script.
+  </description>
+
+  <!-- Import properties file -->
+  <property file="build.properties"/>
+
+
+  <!-- Create a buildnumber -->
+  <target name="buildnumber" description="Create a build number.">
+     <echo message="Generating build number."/>
+     <buildnumber/>
+  </target>
+
+  <!-- Create a timestamp -->
+  <target name="timestamp" description="Create the dirs" depends="buildnumber">
+  	 <echo message="Generating timestamp."/>
+     <tstamp>
+        <format property="build.time" pattern="yyyy-MM-dd-(hh-mm-ssaa)"/>
+     </tstamp>
+  </target>
+
+  <!-- Import build number file -->
+  <property file="build.number"/>
+
+  <!-- Set internal script properties -->
+  <property name="tomcat.app.name" value="pingFitRed5"/>
+  <property name="builddir" value="${builds.directory}"/>
+  <property name="lastbuild" value="${builddir}/lastbuild/${tomcat.app.name}"/>
+  <property name="wardir" value="${builddir}/WARs/${tomcat.app.name}"/>
+  <property name="javasrc" value="${builddir}/lastbuild/${tomcat.app.name}/WEB-INF/classes"/>
+  <property name="sourcedir" value="${source.root.directory}"/>
+
+
+  <path id="lib.classpath">
+      <fileset dir="${sourcedir}/WEB-INF/lib">
+        <include name="**/*.jar" />
+      </fileset>
+      <fileset dir="${tomcat.install.directory}/lib">
+        <include name="**/*.jar" />
+      </fileset>
+      <pathelement path="${javasrc}" />
+  </path>
+
+  <!-- Delete any files in the lastbuild folder... start fresh my friend... start fresh. -->
+  <target name="cleanuplastbuild" description="Cleans up the last build" depends="timestamp">
+    <delete dir="${lastbuild}"/>
+  </target>
+
+  <!-- This target takes all files required for the build and puts them into lastbuild which is basically a temp building location -->
+  <!-- This is done so that I can have Vars.java and VarsDev.java, choosing which one to put into the build at buildtime -->
+  <target name="movefilestolastbuild" description="Moves files to the lastbuild directory." depends="cleanuplastbuild">
+      <copy todir="${lastbuild}">
+        <fileset dir="${sourcedir}" excludes="**.*Thumbs.db"/>
+      </copy>
+  </target>
+
+
+   <target name="compile" description="compile the source" depends="movefilestolastbuild">
+  	  <echo message="Compiling Java code."/>
+        <javac srcdir="${javasrc}" includes="**/**" debug="true" deprecation="true">
+            <classpath>
+                <path refid="lib.classpath" />
+            </classpath>
+        </javac>
+   </target>
+ 
+
+
+
+   <target name="package" description="Packages files for the build" depends="compile">
+        <echo message="Packaging ${tomcat.app.name}'s war file."/>
+        <delete>
+            <fileset dir="." includes="*.war"/>
+        </delete>
+        <war destfile="${tomcat.app.name}-(bld${build.number})-${build.time}.war" webxml="${lastbuild}/WEB-INF/web.xml">
+            <fileset dir="${lastbuild}">
+                <exclude name="**/*.java"/>
+                <exclude name="**/web.xml"/>
+            </fileset>
+        </war>
+		<copy file="${tomcat.app.name}-(bld${build.number})-${build.time}.war" todir="${builddir}"/>
+   </target>
+
+   <target name="packagewithsource" description="Backup source files" depends="package">
+        <echo message="Backing up ${tomcat.app.name}'s source."/>
+        <jar jarfile="${builddir}/${tomcat.app.name}-(bld${build.number})-${build.time}-src.jar">
+            <fileset dir="./">
+                <exclude name="builds/**"/>
+            </fileset>
+        </jar>
+   </target>
+
+
+
+    <target name="QuickBuildWithTomcatRestart" description="Compile the java source and put in Tomcat working directory">
+  	 	<echo message="Running QuickBuildWithTomcatRestart."/>
+  	 	<exec executable="net">
+            <arg value="stop"/>
+            <arg value="${tomcat.service.name}"/>
+        </exec>
+     	<antcall target="QuickBuild"/>
+		<exec executable="net">
+            <arg value="start"/>
+            <arg value="${tomcat.service.name}"/>
+        </exec>
+	</target>
+
+	<target name="QuickBuild" description="Compile the java source and put in Tomcat working directory">
+  	 	<echo message="Running QuickBuild."/>
+     	<copy todir="${lastbuild}" >
+            <fileset dir="${sourcedir}" excludes="**/Thumbs.db"/>
+        </copy>
+        <mkdir dir="${quickbuild.compiled.destination.directory}"/>
+		<javac srcdir="${javasrc}" destdir="${quickbuild.compiled.destination.directory}" includes="**/**" debug="true" deprecation="true">
+            <classpath>
+                <path refid="lib.classpath" />
+            </classpath>
+        </javac>
+        <!--
+        <aopc compilerclasspathref="lib.classpath" verbose="false">
+            <classpath path="${quickbuild.compiled.destination.directory}"/>
+            <src path="${quickbuild.compiled.destination.directory}"/>
+            <include name="**/*.class"/>
+            <aoppath path="${sourcedir}/WEB-INF/jboss-aop.xml"/>
+         </aopc>
+         -->
+		<copy todir="${quickbuild.tomcat.root.directory}">
+			<fileset dir="${lastbuild}">
+			</fileset>
+		</copy>
+	</target>
+
+		
+	<target name="QuickBuildClean" description="Compile the java source and put in Tomcat working directory">
+        <antcall target="cleanuplastbuild"/>
+        <exec executable="net">
+            <arg value="stop"/>
+            <arg value="${tomcat.service.name}"/>
+        </exec>
+        <delete includeemptydirs="true">
+            <fileset dir="${quickbuild.tomcat.root.directory}" includes="**/*"/>
+        </delete>
+        <antcall target="QuickBuild"/>
+    </target>
+
+
+
+	<target name="buildWar" description="Builds a war file." depends="packagewithsource">
+        <echo message="Creating pingFitRed5.war for ${tomcat.app.name}."/>
+        <copy file="${tomcat.app.name}-(bld${build.number})-${build.time}.war" tofile="${wardir}/pingFitRed5.war" overwrite="true"/>
+		<delete file="${tomcat.app.name}-(bld${build.number})-${build.time}.war"/>
+    </target>
+
+
+
+
+    
+</project>
