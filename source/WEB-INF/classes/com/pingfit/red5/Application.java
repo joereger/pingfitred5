@@ -66,7 +66,6 @@ public class Application extends MultiThreadedApplicationAdapter {
     public boolean roomConnect(IConnection conn, Object[] params) {
 	    Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("roomConnect() called");
-
         //Whether user should be allowed in???
         return true;
     }
@@ -78,75 +77,67 @@ public class Application extends MultiThreadedApplicationAdapter {
               logger.debug("!super.roomStart(room) so returning false");
               return false;
           }
+          Object handler = new RoomHandler();
+          room.registerServiceHandler("room", handler);
           //createSharedObject(room, "sampleSO", true);
           //ISharedObject so = getSharedObject(room, "sampleSO");
           return true;
       }
 
 
-    public void say(String msg, String from, String type){
-        Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("say() called... msg="+msg+" from="+from);
-        if (msg!=null && !msg.equals("") && msg.length()>0){
-            //Create the message to be sent
-            Object[] out = new Object[1];
-            ObjectMap oneRow = new ObjectMap( );
-            oneRow.put( "from" , from );
-            oneRow.put( "msg" , msg );
-            oneRow.put( "type" , type );
-            out[0] = oneRow;
-            //Iterate connections in this scope
-            Iterator it = this.getScope().getConnections();
-            while (it.hasNext()){
-                IConnection iConnection = (IConnection)it.next( );
-                logger.debug("found a connection... iConnection.getHost()="+iConnection.getHost());
-                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-                iConn.invoke("messageInbound" , new Object[] {out} );
-            }
-        }
-    }
-
-    public String getPeopleInRoom(){
-        Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("getPeopleInRoom() called");
-        Element root = new Element("peopleinroom");
-        org.jdom.Document outDoc = new org.jdom.Document(root);
-        for (Iterator<IClient> it=this.getScope().getClients().iterator(); it.hasNext();) {
-            IClient iClient=it.next();
-            logger.debug("getPeopleInRoom() adding iClient.getId()="+iClient.getId());
-            Element element = new Element("person");
-            element.addContent(nameValueElement("name", String.valueOf(iClient.getAttribute("name"))));
-            element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
-            root.addContent(element);
-        }
-        return Util.jdomDocAsString(outDoc);
-    }
-
-    private Element nameValueElement(String name, String value){
-        Element element = new Element(name);
-        element.setContent(new Text(value));
-        return element;
-    }
+//    public void say(String msg, String from, String type){
+//        Logger logger = Logger.getLogger(this.getClass().getName());
+//        logger.debug("say() called... msg="+msg+" from="+from);
+//        logger.debug("this.getScope().getName()="+this.getScope().getName());
+//        logger.debug("this.getScope().getPath()="+this.getScope().getPath());
+//        for (Iterator iterator=this.getScope().getScopeNames(); iterator.hasNext();) {
+//            String scopeName =(String) iterator.next();
+//            logger.debug("scopeName="+scopeName);
+//        }
+//        if (msg!=null && !msg.equals("") && msg.length()>0){
+//            //Create the message to be sent
+//            Object[] out = new Object[1];
+//            ObjectMap oneRow = new ObjectMap( );
+//            oneRow.put( "from" , from );
+//            oneRow.put( "msg" , msg );
+//            oneRow.put( "type" , type );
+//            out[0] = oneRow;
+//            //Iterate connections in this scope
+//            Iterator it = this.getScope().getConnections();
+//            while (it.hasNext()){
+//                IConnection iConnection = (IConnection)it.next( );
+//                logger.debug("found a connection");
+//                logger.debug("iConnection.getHost()="+iConnection.getHost());
+//                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+//                iConn.invoke("messageInbound" , new Object[] {out} );
+//            }
+//        }
+//    }
+//
+//    public String getPeopleInRoom(){
+//        Logger logger = Logger.getLogger(this.getClass().getName());
+//        logger.debug("getPeopleInRoom() called");
+//
+//        Element root = new Element("peopleinroom");
+//        org.jdom.Document outDoc = new org.jdom.Document(root);
+//        for (Iterator<IClient> it=this.getScope().getClients().iterator(); it.hasNext();) {
+//            IClient iClient=it.next();
+//            logger.debug("getPeopleInRoom() adding iClient.getId()="+iClient.getId());
+//            Element element = new Element("person");
+//            element.addContent(nameValueElement("name", String.valueOf(iClient.getAttribute("name"))));
+//            element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
+//            root.addContent(element);
+//        }
+//        return Util.jdomDocAsString(outDoc);
+//    }
+//
+//    private Element nameValueElement(String name, String value){
+//        Element element = new Element(name);
+//        element.setContent(new Text(value));
+//        return element;
+//    }
     
-    private org.w3c.dom.Document jdomDocAsW3CDoc(org.jdom.Document doc){
-        Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("jdomDocAsW3CDoc() called");
-        logger.debug(Util.jdomDocAsString(doc));
-        try{
-            DOMOutputter outputter = new DOMOutputter();
-            org.w3c.dom.Document document = outputter.output(doc);
-            if (document==null){
-                logger.debug("document is null");
-            } else {
-                logger.debug("document is not null");   
-            }
-            return document;
-        } catch (Exception ex){
-            logger.error("", ex);
-        }
-        logger.debug("returning null");
-        return null;
-    }
+
 
 
 
