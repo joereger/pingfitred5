@@ -7,11 +7,16 @@ import org.red5.server.api.IClient;
 import org.red5.server.api.service.IServiceCapableConnection;
 import org.red5.io.utils.ObjectMap;
 import org.apache.log4j.Logger;
+import org.jdom.Element;
+import org.jdom.Text;
+import org.jdom.output.DOMOutputter;
+import org.w3c.dom.Document;
 
 import java.util.Iterator;
 import java.util.ArrayList;
 
 import com.pingfit.util.Num;
+import com.pingfit.util.Util;
 
 
 public class Application extends MultiThreadedApplicationAdapter {
@@ -41,7 +46,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         }
         conn.getClient().setAttribute("userid", userid);
         String name = "";
-        if (params!=null && params.length>=2 && params[1]!=null && String.valueOf(params[1]).equals("")){
+        if (params!=null && params.length>=2 && params[1]!=null && !String.valueOf(params[1]).equals("")){
             name = String.valueOf(params[1]);
         }
         conn.getClient().setAttribute("name", name);
@@ -79,38 +84,68 @@ public class Application extends MultiThreadedApplicationAdapter {
       }
 
 
-    public void say(String msg, String from){
+    public void say(String msg, String from, String type){
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("say() called... msg="+msg+" from="+from);
-        //Create the message to be sent
-        Object[] out = new Object[1];
-        ObjectMap oneRow = new ObjectMap( );
-        oneRow.put( "from" , from );
-        oneRow.put( "msg" , msg );
-        out[0] = oneRow;
-        //Iterate connections in this scope
-        Iterator it = this.getScope().getConnections();
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-            logger.debug("found a connection... iConnection.getHost()="+iConnection.getHost());
-            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("messageInbound" , new Object[] {out} );
+        if (msg!=null && !msg.equals("") && msg.length()>0){
+            //Create the message to be sent
+            Object[] out = new Object[1];
+            ObjectMap oneRow = new ObjectMap( );
+            oneRow.put( "from" , from );
+            oneRow.put( "msg" , msg );
+            oneRow.put( "type" , type );
+            out[0] = oneRow;
+            //Iterate connections in this scope
+            Iterator it = this.getScope().getConnections();
+            while (it.hasNext()){
+                IConnection iConnection = (IConnection)it.next( );
+                logger.debug("found a connection... iConnection.getHost()="+iConnection.getHost());
+                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+                iConn.invoke("messageInbound" , new Object[] {out} );
+            }
         }
     }
 
-    public ArrayList<Person> getPeopleInRoom(){
+    public String getPeopleInRoom(){
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("getPeopleInRoom() called");
-        ArrayList<Person> out = new ArrayList<Person>();
+        Element root = new Element("peopleinroom");
+        org.jdom.Document outDoc = new org.jdom.Document(root);
         for (Iterator<IClient> it=this.getScope().getClients().iterator(); it.hasNext();) {
             IClient iClient=it.next();
             logger.debug("getPeopleInRoom() adding iClient.getId()="+iClient.getId());
-            Person person = new Person();
-            person.setName(String.valueOf(iClient.getAttribute("name")));
-            person.setUserid(Integer.parseInt(String.valueOf(iClient.getAttribute("userid"))));
-            out.add(person);
+            Element element = new Element("person");
+            element.addContent(nameValueElement("name", String.valueOf(iClient.getAttribute("name"))));
+            element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
+            root.addContent(element);
         }
-        return out;
+        return Util.jdomDocAsString(outDoc);
+    }
+
+    private Element nameValueElement(String name, String value){
+        Element element = new Element(name);
+        element.setContent(new Text(value));
+        return element;
+    }
+    
+    private org.w3c.dom.Document jdomDocAsW3CDoc(org.jdom.Document doc){
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        logger.debug("jdomDocAsW3CDoc() called");
+        logger.debug(Util.jdomDocAsString(doc));
+        try{
+            DOMOutputter outputter = new DOMOutputter();
+            org.w3c.dom.Document document = outputter.output(doc);
+            if (document==null){
+                logger.debug("document is null");
+            } else {
+                logger.debug("document is not null");   
+            }
+            return document;
+        } catch (Exception ex){
+            logger.error("", ex);
+        }
+        logger.debug("returning null");
+        return null;
     }
 
 
