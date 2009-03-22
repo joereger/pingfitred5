@@ -67,10 +67,11 @@ public class Application extends MultiThreadedApplicationAdapter {
 
     public boolean roomConnect(IConnection conn, Object[] params) {
         Logger logger = Logger.getLogger(this.getClass().getName());
-        //IConnection conn = Red5.getConnectionLocal();
-        IClient client = conn.getClient();
-        IScope scope = conn.getScope();
-        logger.debug("-----say()---------------------------");
+        logger.debug("roomConnect()");
+        IConnection conn2 = Red5.getConnectionLocal();
+        IClient client = conn2.getClient();
+        IScope scope = conn2.getScope();
+        logger.debug("-----roomConnect()---------------------------");
         logger.debug(scope);
         logger.debug(client);
         logger.debug(client.getId());
@@ -88,9 +89,10 @@ public class Application extends MultiThreadedApplicationAdapter {
         out[0] = oneRow;
         //Iterate connections in this scope
         Iterator it = scope.getConnections();
+        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
         while (it.hasNext()){
             IConnection iConnection = (IConnection)it.next( );
-            logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
+            logger.debug("sending roomConnect to iConnection.getHost()="+iConnection.getHost());
             IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
             iConn.invoke("personEnteredRoom" , new Object[] {out} );
         }
