@@ -22,6 +22,18 @@ import com.pingfit.util.Util;
 
 public class RoomHandler extends MultiThreadedApplicationAdapter {
 
+    public IScope scope;
+
+    public RoomHandler(IScope scope){
+        this.scope = scope;
+
+    }
+
+    public boolean roomConnect(IConnection conn, Object[] params) {
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        logger.debug("roomConnect() called inside RoomHandler!!!");
+        return true;
+    }
 
     public void say(String msg, String from, String type){
         Logger logger = Logger.getLogger(this.getClass().getName());

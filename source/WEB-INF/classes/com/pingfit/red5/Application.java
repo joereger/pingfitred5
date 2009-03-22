@@ -4,6 +4,8 @@ import org.red5.server.adapter.MultiThreadedApplicationAdapter;
 import org.red5.server.api.IConnection;
 import org.red5.server.api.IScope;
 import org.red5.server.api.IClient;
+import org.red5.server.api.Red5;
+import org.red5.server.api.event.IEventListener;
 import org.red5.server.api.service.IServiceCapableConnection;
 import org.red5.io.utils.ObjectMap;
 import org.apache.log4j.Logger;
@@ -64,9 +66,34 @@ public class Application extends MultiThreadedApplicationAdapter {
 	}
 
     public boolean roomConnect(IConnection conn, Object[] params) {
-	    Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("roomConnect() called");
-        //Whether user should be allowed in???
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        //IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        IScope scope = conn.getScope();
+        logger.debug("-----say()---------------------------");
+        logger.debug(scope);
+        logger.debug(client);
+        logger.debug(client.getId());
+        logger.debug(IClient.ID);
+        logger.debug(client.getConnections());
+        logger.debug(client.getScopes());
+        logger.debug(client.getCreationTime());
+        logger.debug(conn);
+        logger.debug("-------------------------------------");
+        //Create the message to be sent
+        Object[] out = new Object[1];
+        ObjectMap oneRow = new ObjectMap( );
+        oneRow.put( "name" , client.getAttribute("name") );
+        oneRow.put( "userid" , client.getAttribute("userid") );
+        out[0] = oneRow;
+        //Iterate connections in this scope
+        Iterator it = scope.getConnections();
+        while (it.hasNext()){
+            IConnection iConnection = (IConnection)it.next( );
+            logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
+            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+            iConn.invoke("personEnteredRoom" , new Object[] {out} );
+        }
         return true;
     }
 
@@ -77,65 +104,17 @@ public class Application extends MultiThreadedApplicationAdapter {
               logger.debug("!super.roomStart(room) so returning false");
               return false;
           }
-          Object handler = new RoomHandler();
+          Object handler = new RoomHandler(room);
           room.registerServiceHandler("room", handler);
+          IEventListener listener = new RoomListener();
+          room.addEventListener(listener);
           //createSharedObject(room, "sampleSO", true);
           //ISharedObject so = getSharedObject(room, "sampleSO");
           return true;
       }
 
 
-//    public void say(String msg, String from, String type){
-//        Logger logger = Logger.getLogger(this.getClass().getName());
-//        logger.debug("say() called... msg="+msg+" from="+from);
-//        logger.debug("this.getScope().getName()="+this.getScope().getName());
-//        logger.debug("this.getScope().getPath()="+this.getScope().getPath());
-//        for (Iterator iterator=this.getScope().getScopeNames(); iterator.hasNext();) {
-//            String scopeName =(String) iterator.next();
-//            logger.debug("scopeName="+scopeName);
-//        }
-//        if (msg!=null && !msg.equals("") && msg.length()>0){
-//            //Create the message to be sent
-//            Object[] out = new Object[1];
-//            ObjectMap oneRow = new ObjectMap( );
-//            oneRow.put( "from" , from );
-//            oneRow.put( "msg" , msg );
-//            oneRow.put( "type" , type );
-//            out[0] = oneRow;
-//            //Iterate connections in this scope
-//            Iterator it = this.getScope().getConnections();
-//            while (it.hasNext()){
-//                IConnection iConnection = (IConnection)it.next( );
-//                logger.debug("found a connection");
-//                logger.debug("iConnection.getHost()="+iConnection.getHost());
-//                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-//                iConn.invoke("messageInbound" , new Object[] {out} );
-//            }
-//        }
-//    }
-//
-//    public String getPeopleInRoom(){
-//        Logger logger = Logger.getLogger(this.getClass().getName());
-//        logger.debug("getPeopleInRoom() called");
-//
-//        Element root = new Element("peopleinroom");
-//        org.jdom.Document outDoc = new org.jdom.Document(root);
-//        for (Iterator<IClient> it=this.getScope().getClients().iterator(); it.hasNext();) {
-//            IClient iClient=it.next();
-//            logger.debug("getPeopleInRoom() adding iClient.getId()="+iClient.getId());
-//            Element element = new Element("person");
-//            element.addContent(nameValueElement("name", String.valueOf(iClient.getAttribute("name"))));
-//            element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
-//            root.addContent(element);
-//        }
-//        return Util.jdomDocAsString(outDoc);
-//    }
-//
-//    private Element nameValueElement(String name, String value){
-//        Element element = new Element(name);
-//        element.setContent(new Text(value));
-//        return element;
-//    }
+
     
 
 
