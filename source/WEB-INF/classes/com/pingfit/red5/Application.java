@@ -109,10 +109,10 @@ public class Application extends MultiThreadedApplicationAdapter {
 
     public void roomDisconnect(IConnection conn) {
         Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("roomDisconnect()");
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
         IScope scope = conn2.getScope();
+        logger.debug("roomDisconnect() by client.getAttribute(\"name\")="+client.getAttribute("name")+" client.getAttribute(\"userid\")="+client.getAttribute("userid"));
 //        logger.debug("-----roomConnect()---------------------------");
 //        logger.debug(scope);
 //        logger.debug(client);
@@ -150,8 +150,8 @@ public class Application extends MultiThreadedApplicationAdapter {
           }
           Object handler = new RoomHandler(room);
           room.registerServiceHandler("room", handler);
-          IEventListener listener = new RoomListener();
-          room.addEventListener(listener);
+          //IEventListener listener = new RoomListener();
+          //room.addEventListener(listener);
           //createSharedObject(room, "sampleSO", true);
           //ISharedObject so = getSharedObject(room, "sampleSO");
           return true;
