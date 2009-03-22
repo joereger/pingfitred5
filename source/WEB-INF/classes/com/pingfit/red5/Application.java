@@ -71,33 +71,75 @@ public class Application extends MultiThreadedApplicationAdapter {
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
         IScope scope = conn2.getScope();
-        logger.debug("-----roomConnect()---------------------------");
-        logger.debug(scope);
-        logger.debug(client);
-        logger.debug(client.getId());
-        logger.debug(IClient.ID);
-        logger.debug(client.getConnections());
-        logger.debug(client.getScopes());
-        logger.debug(client.getCreationTime());
-        logger.debug(conn);
-        logger.debug("-------------------------------------");
-        //Create the message to be sent
-        Object[] out = new Object[1];
+//        logger.debug("-----roomConnect()---------------------------");
+//        logger.debug(scope);
+//        logger.debug(client);
+//        logger.debug(client.getId());
+//        logger.debug(IClient.ID);
+//        logger.debug(client.getConnections());
+//        logger.debug(client.getScopes());
+//        logger.debug(client.getCreationTime());
+//        logger.debug(conn);
+//        logger.debug("-------------------------------------");
+        //Store the person who just entered room
+        Object[] justEnteredRoom = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "name" , client.getAttribute("name") );
         oneRow.put( "userid" , client.getAttribute("userid") );
-        out[0] = oneRow;
+        justEnteredRoom[0] = oneRow;
         //Iterate connections in this scope
         Iterator it = scope.getConnections();
         logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
         while (it.hasNext()){
             IConnection iConnection = (IConnection)it.next( );
-            logger.debug("sending roomConnect to iConnection.getHost()="+iConnection.getHost());
+            //Notify existing users of this new person
             IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("personEnteredRoom" , new Object[] {out} );
+            iConn.invoke("personEnteredRoom" , new Object[] {justEnteredRoom} );
+            //Notify person who just entered of people already here
+            Object[] wasAlreadyInRoom = new Object[1];
+            ObjectMap oneRow2 = new ObjectMap( );
+            oneRow2.put( "name" , iConn.getClient().getAttribute("name") );
+            oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
+            wasAlreadyInRoom[0] = oneRow2;
+            IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
+            iConn2.invoke("personEnteredRoom" , new Object[] {wasAlreadyInRoom} );
         }
         return true;
     }
+
+    public void roomDisconnect(IConnection conn) {
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        logger.debug("roomDisconnect()");
+        IConnection conn2 = Red5.getConnectionLocal();
+        IClient client = conn2.getClient();
+        IScope scope = conn2.getScope();
+//        logger.debug("-----roomConnect()---------------------------");
+//        logger.debug(scope);
+//        logger.debug(client);
+//        logger.debug(client.getId());
+//        logger.debug(IClient.ID);
+//        logger.debug(client.getConnections());
+//        logger.debug(client.getScopes());
+//        logger.debug(client.getCreationTime());
+//        logger.debug(conn);
+//        logger.debug("-------------------------------------");
+        //Store the person who just left room
+        Object[] justLeftRoom = new Object[1];
+        ObjectMap oneRow = new ObjectMap( );
+        oneRow.put( "name" , client.getAttribute("name") );
+        oneRow.put( "userid" , client.getAttribute("userid") );
+        justLeftRoom[0] = oneRow;
+        //Iterate connections in this scope
+        Iterator it = scope.getConnections();
+        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
+        while (it.hasNext()){
+            IConnection iConnection = (IConnection)it.next( );
+            //Notify existing users of this new person
+            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+            iConn.invoke("personLeftRoom" , new Object[] {justLeftRoom} );
+        }
+    }
+
 
     public boolean roomStart(IScope room) {
         Logger logger = Logger.getLogger(this.getClass().getName());
