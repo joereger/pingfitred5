@@ -29,6 +29,8 @@ public class Application extends MultiThreadedApplicationAdapter {
         //System.out.println("pingFitRed5 Application.appStart() called");
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("pingFitRed5 Application.appStart() called");
+        //Object handler = new PresenceHandler(app);
+        //app.registerServiceHandler("presence", handler);
         appScope = app;
 		return true;
 	}
@@ -47,46 +49,65 @@ public class Application extends MultiThreadedApplicationAdapter {
             userid = Integer.parseInt(String.valueOf(params[0]));
         }
         conn.getClient().setAttribute("userid", userid);
-        String name = "";
+        String nickname = "";
         if (params!=null && params.length>=2 && params[1]!=null && !String.valueOf(params[1]).equals("")){
-            name = String.valueOf(params[1]);
+            nickname = String.valueOf(params[1]);
         }
-        conn.getClient().setAttribute("name", name);
-        logger.debug("appConnect() by "+conn.getClient().getAttribute("name"));
+        conn.getClient().setAttribute("nickname", nickname);
+        String friends = "";
+        if (params!=null && params.length>=3 && params[2]!=null && !String.valueOf(params[2]).equals("")){
+            friends = String.valueOf(params[2]);
+        }
+        conn.getClient().setAttribute("friends", friends);
+        String status = "Online";
+        if (params!=null && params.length>=4 && params[3]!=null && !String.valueOf(params[3]).equals("")){
+            status = String.valueOf(params[3]);
+        }
+        conn.getClient().setAttribute("status", status);
+        //Broadcast Status
+        PresenceHandler.broadcastStatus();
         return super.appConnect(conn, params);
 	}
 
 
 	public void appDisconnect(IConnection conn) {
         Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("appDisconnect() called by "+conn.getClient().getAttribute("name"));
+        logger.debug("appDisconnect() called by "+conn.getClient().getAttribute("nickname"));
         //System.out.println("appDisconnect() called");
+        //Broadcast Status
+        conn.getClient().setAttribute("status", "Offline");
+        PresenceHandler.broadcastStatus();
         //Do stuff before, apparently
         super.appDisconnect(conn);
 	}
 
     public boolean roomConnect(IConnection conn, Object[] params) {
         Logger logger = Logger.getLogger(this.getClass().getName());
-        logger.debug("roomConnect()");
+        logger.debug("-----roomConnect()---------------------------");
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
         IScope scope = conn2.getScope();
-//        logger.debug("-----roomConnect()---------------------------");
-//        logger.debug(scope);
-//        logger.debug(client);
-//        logger.debug(client.getId());
-//        logger.debug(IClient.ID);
-//        logger.debug(client.getConnections());
-//        logger.debug(client.getScopes());
-//        logger.debug(client.getCreationTime());
-//        logger.debug(conn);
-//        logger.debug("-------------------------------------");
+        logger.debug("scope="+scope);
+        logger.debug("client="+client);
+        logger.debug("client.getId()="+client.getId());
+        logger.debug("IClient.ID="+IClient.ID);
+        logger.debug("client.getConnections()="+client.getConnections());
+        logger.debug("client.getScopes()="+client.getScopes());
+        logger.debug("client.getCreationTime()="+client.getCreationTime());
+        logger.debug("conn="+conn);
+        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
         //Store the person who just entered room
         Object[] justEnteredRoom = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "name" , client.getAttribute("name") );
         oneRow.put( "userid" , client.getAttribute("userid") );
         justEnteredRoom[0] = oneRow;
+        //Set userid of the connected user
+        int useridOfJoiner = 0;
+        if (Num.isinteger(String.valueOf(client.getAttribute("userid")))){
+            useridOfJoiner = Integer.parseInt(String.valueOf(client.getAttribute("userid")));
+        }
         //Iterate connections in this scope
         Iterator it = scope.getConnections();
         logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
@@ -98,12 +119,16 @@ public class Application extends MultiThreadedApplicationAdapter {
             //Notify person who just entered of people already here
             Object[] wasAlreadyInRoom = new Object[1];
             ObjectMap oneRow2 = new ObjectMap( );
-            oneRow2.put( "name" , iConn.getClient().getAttribute("name") );
+            oneRow2.put( "nickname" , iConn.getClient().getAttribute("nickname") );
             oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
             wasAlreadyInRoom[0] = oneRow2;
             IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
-            iConn2.invoke("personEnteredRoom" , new Object[] {wasAlreadyInRoom} );
+            iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
         }
+        //Broadcast Status
+        conn.getClient().setAttribute("status", "InRoom");
+        PresenceHandler.broadcastStatus();
+        logger.debug("-----------------------------roomConnect()--------");
         return true;
     }
 
@@ -112,7 +137,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
         IScope scope = conn2.getScope();
-        logger.debug("roomDisconnect() by client.getAttribute(\"name\")="+client.getAttribute("name")+" client.getAttribute(\"userid\")="+client.getAttribute("userid"));
+        logger.debug("roomDisconnect() by client.getAttribute(\"nickname\")="+client.getAttribute("nickname")+" client.getAttribute(\"userid\")="+client.getAttribute("userid"));
 //        logger.debug("-----roomConnect()---------------------------");
 //        logger.debug(scope);
 //        logger.debug(client);
@@ -126,7 +151,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         //Store the person who just left room
         Object[] justLeftRoom = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
-        oneRow.put( "name" , client.getAttribute("name") );
+        oneRow.put( "nickname" , client.getAttribute("nickname") );
         oneRow.put( "userid" , client.getAttribute("userid") );
         justLeftRoom[0] = oneRow;
         //Iterate connections in this scope
@@ -136,8 +161,11 @@ public class Application extends MultiThreadedApplicationAdapter {
             IConnection iConnection = (IConnection)it.next( );
             //Notify existing users of this new person
             IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("personLeftRoom" , new Object[] {justLeftRoom} );
+            iConn.invoke("personLeavesRoom" , new Object[] {justLeftRoom} );
         }
+        //Broadcast Status
+        conn.getClient().setAttribute("status", "LeftRoom");
+        PresenceHandler.broadcastStatus();
     }
 
 
@@ -150,12 +178,24 @@ public class Application extends MultiThreadedApplicationAdapter {
           }
           Object handler = new RoomHandler(room);
           room.registerServiceHandler("room", handler);
+          Object presHand = new PresenceHandler();
+          room.registerServiceHandler("presence", presHand);
           //IEventListener listener = new RoomListener();
           //room.addEventListener(listener);
           //createSharedObject(room, "sampleSO", true);
           //ISharedObject so = getSharedObject(room, "sampleSO");
           return true;
       }
+
+
+
+
+
+
+
+
+
+
 
 
 

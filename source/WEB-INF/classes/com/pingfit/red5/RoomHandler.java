@@ -35,7 +35,7 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
         return true;
     }
 
-    public void say(String msg, String from, String type){
+    public void say(String msg, String from, String messagetype){
         Logger logger = Logger.getLogger(this.getClass().getName());
         IConnection conn = Red5.getConnectionLocal();
         IClient client = conn.getClient();
@@ -54,9 +54,11 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
             //Create the message to be sent
             Object[] out = new Object[1];
             ObjectMap oneRow = new ObjectMap( );
-            oneRow.put( "from" , from );
+            oneRow.put( "nickname" , from );
             oneRow.put( "msg" , msg );
-            oneRow.put( "type" , type );
+            oneRow.put( "messagetype" , messagetype );
+            oneRow.put( "roomid" , client.getAttribute("roomid") );
+            oneRow.put( "userid" , client.getAttribute("userid") );
             out[0] = oneRow;
             //Iterate connections in this scope
             Iterator it = scope.getConnections();
@@ -64,7 +66,7 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
                 IConnection iConnection = (IConnection)it.next( );
                 logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
                 IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-                iConn.invoke("messageInbound" , new Object[] {out} );
+                iConn.invoke("messageToRoom" , new Object[] {out} );
             }
         }
     }
