@@ -64,6 +64,16 @@ public class Application extends MultiThreadedApplicationAdapter {
             userstatus = String.valueOf(params[3]);
         }
         conn.getClient().setAttribute("userstatus", userstatus);
+        String roomid = "";
+        if (params!=null && params.length>=5 && params[4]!=null && !String.valueOf(params[4]).equals("")){
+            roomid = String.valueOf(params[4]);
+        }
+        conn.getClient().setAttribute("roomid", roomid);
+        String roomname = "";
+        if (params!=null && params.length>=6 && params[5]!=null && !String.valueOf(params[5]).equals("")){
+            roomname = String.valueOf(params[5]);
+        }
+        conn.getClient().setAttribute("roomname", roomname);
         //Broadcast Status
         PresenceHandler.broadcastStatus();
         return super.appConnect(conn, params);

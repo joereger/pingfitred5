@@ -72,38 +72,27 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 
     public void setRoom(String roomid, String roomname){
         Logger logger = Logger.getLogger(this.getClass().getName());
+        logger.debug("setRoom() called roomid="+roomid+" roomname="+roomname);
         IConnection conn = Red5.getConnectionLocal();
         IClient client = conn.getClient();
         IScope scope = conn.getScope();
         boolean hasChanged = false;
         if (1==1){
             String old = String.valueOf(client.getAttribute("roomid"));
-            if (old==null || old.equals("null")){
-                old = "";
-            }
-            if (roomid==null || roomid.equals("null")){
-                roomid = "";
-            }
+            if (old==null || old.equals("null")){ old = ""; }
+            if (roomid==null || roomid.equals("null")){ roomid = ""; }
             conn.getClient().setAttribute("roomid", roomid);
-            if (!old.equals(roomid)){
-                hasChanged = true;
-            }
+            if (!old.equals(roomid)){ hasChanged = true; logger.debug("setRoom() roomid has changed");}
         }
         if (1==1){
             String old = String.valueOf(client.getAttribute("roomname"));
-            if (old==null || old.equals("null")){
-                old = "";
-            }
-            if (roomname==null || roomname.equals("null")){
-                roomname = "";
-            }
+            if (old==null || old.equals("null")){ old = ""; }
+            if (roomname==null || roomname.equals("null")){ roomname = ""; }
             conn.getClient().setAttribute("roomname", roomname);
-            if (!old.equals(roomname)){
-                hasChanged = true;
-            }
+            if (!old.equals(roomname)){ hasChanged = true; logger.debug("setRoom() roomname has changed");}
         }
         //Broadcast if has changed
-        if (hasChanged){ broadcastStatus(); }
+        if (hasChanged){ broadcastStatus(); logger.debug("setRoom() hasChanged, status broadcast");} else {logger.debug("setRoom() !hasChanged");}
     }
 
     public void setRoomname(String roomname){
