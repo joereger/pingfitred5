@@ -92,7 +92,7 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
             IClient iClient=it.next();
             //logger.debug("getPeopleInRoom() adding iClient.getId()="+iClient.getId());
             Element element = new Element("person");
-            element.addContent(nameValueElement("name", String.valueOf(iClient.getAttribute("name"))));
+            element.addContent(nameValueElement("nickname", String.valueOf(iClient.getAttribute("nickname"))));
             element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
             root.addContent(element);
         }

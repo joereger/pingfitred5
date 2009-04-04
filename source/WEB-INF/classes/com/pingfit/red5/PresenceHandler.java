@@ -27,7 +27,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
     public PresenceHandler(){
     }
 
-    public void setFriends(String friends){
+    public void setFriends(String friendsCommaSep){
         Logger logger = Logger.getLogger(this.getClass().getName());
         IConnection conn = Red5.getConnectionLocal();
         IClient client = conn.getClient();
@@ -42,42 +42,85 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         logger.debug(client.getCreationTime());
         logger.debug(conn);
         logger.debug("current client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-        logger.debug("incoming friends="+friends);
+        logger.debug("incoming friendsCommaSep="+friendsCommaSep);
         logger.debug("-------------------------------------");
-        if (friends==null){
-            friends = "";
+        if (friendsCommaSep==null){
+            friendsCommaSep = "";
         }
-        conn.getClient().setAttribute("friends", friends);
+        conn.getClient().setAttribute("friends", friendsCommaSep);
     }
 
-    public void setStatus(String status){
+    public void setStatus(String userstatus){
         Logger logger = Logger.getLogger(this.getClass().getName());
         IConnection conn = Red5.getConnectionLocal();
         IClient client = conn.getClient();
         IScope scope = conn.getScope();
-        logger.debug("-----setStatus()---------------------");
-        logger.debug(scope);
-        logger.debug(client);
-        logger.debug(client.getId());
-        logger.debug(IClient.ID);
-        logger.debug(client.getConnections());
-        logger.debug(client.getScopes());
-        logger.debug(client.getCreationTime());
-        logger.debug(conn);
-        logger.debug("current client.getAttribute(\"status\")="+client.getAttribute("status"));
-        logger.debug("incoming status="+status);
-        logger.debug("-------------------------------------");
-        String oldStatus = String.valueOf(client.getAttribute("status"));
+        String oldStatus = String.valueOf(client.getAttribute("userstatus"));
         if (oldStatus==null || oldStatus.equals("null")){
             oldStatus = "";
         }
-        if (status==null || status.equals("null")){
-            status = "";
+        if (userstatus==null || userstatus.equals("null")){
+            userstatus = "";
         }
         //Set the status
-        conn.getClient().setAttribute("status", status);
+        conn.getClient().setAttribute("userstatus", userstatus);
         //Broadcast if status has changed
-        if (!oldStatus.equals(status)){
+        if (!oldStatus.equals(userstatus)){
+            broadcastStatus();
+        }
+    }
+
+    public void setRoom(String roomid, String roomname){
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        IScope scope = conn.getScope();
+        boolean hasChanged = false;
+        if (1==1){
+            String old = String.valueOf(client.getAttribute("roomid"));
+            if (old==null || old.equals("null")){
+                old = "";
+            }
+            if (roomid==null || roomid.equals("null")){
+                roomid = "";
+            }
+            conn.getClient().setAttribute("roomid", roomid);
+            if (!old.equals(roomid)){
+                hasChanged = true;
+            }
+        }
+        if (1==1){
+            String old = String.valueOf(client.getAttribute("roomname"));
+            if (old==null || old.equals("null")){
+                old = "";
+            }
+            if (roomname==null || roomname.equals("null")){
+                roomname = "";
+            }
+            conn.getClient().setAttribute("roomname", roomname);
+            if (!old.equals(roomname)){
+                hasChanged = true;
+            }
+        }
+        //Broadcast if has changed
+        if (hasChanged){ broadcastStatus(); }
+    }
+
+    public void setRoomname(String roomname){
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        IScope scope = conn.getScope();
+        String old = String.valueOf(client.getAttribute("roomname"));
+        if (old==null || old.equals("null")){
+            old = "";
+        }
+        if (roomname==null || roomname.equals("null")){
+            roomname = "";
+        }
+        conn.getClient().setAttribute("roomname", roomname);
+        //Broadcast if status has changed
+        if (!old.equals(roomname)){
             broadcastStatus();
         }
     }
@@ -186,24 +229,21 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
             logger.debug("---iConnection.getClient()="+iConnection.getClient());
             logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
             logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-            //Only broadcast on the "presence" channel
-            if (iConnection.getScope().getName().equals("presence")){
-                if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
-                    int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
-                    boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
-                    if (isFriend){
-                        //This is a friend, update status
-                        logger.debug("-is friend, calling presenceChange");
-                        IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                        notifyOfPresenceChange(iConnToNotify, client);
-                    } else {
-                        logger.debug("-is not friend");
-                    }
+            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+            //Only broadcast to friends
+            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
+                if (isFriend){
+                    //This is a friend, update status
+                    logger.debug("-is friend, calling presenceChange");
+                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                    notifyOfPresenceChange(iConnToNotify, client);
                 } else {
-                    logger.debug("-userid not an int");
+                    logger.debug("-is not friend");
                 }
             } else {
-                logger.debug("-not presence channel iConnection.getScope().getName()="+iConnection.getScope().getName());   
+                logger.debug("-userid not an int");
             }
         }
         logger.debug("--------------------------broadcastStatus()----");

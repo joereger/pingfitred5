@@ -41,7 +41,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         logger.debug("appConnect() called");
         for (int i=0; i<params.length; i++) {
             Object param=params[i];
-            logger.debug("appConnect() param="+param.toString());
+            logger.debug("appConnect() param["+i+"]="+param.toString());
         }
         //Set attributes that'll follow this IClient around the system
         int userid = 0;
@@ -59,11 +59,11 @@ public class Application extends MultiThreadedApplicationAdapter {
             friends = String.valueOf(params[2]);
         }
         conn.getClient().setAttribute("friends", friends);
-        String status = "Online";
+        String userstatus = "Online";
         if (params!=null && params.length>=4 && params[3]!=null && !String.valueOf(params[3]).equals("")){
-            status = String.valueOf(params[3]);
+            userstatus = String.valueOf(params[3]);
         }
-        conn.getClient().setAttribute("status", status);
+        conn.getClient().setAttribute("userstatus", userstatus);
         //Broadcast Status
         PresenceHandler.broadcastStatus();
         return super.appConnect(conn, params);
@@ -75,7 +75,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         logger.debug("appDisconnect() called by "+conn.getClient().getAttribute("nickname"));
         //System.out.println("appDisconnect() called");
         //Broadcast Status
-        conn.getClient().setAttribute("status", "Offline");
+        conn.getClient().setAttribute("userstatus", "Offline");
         PresenceHandler.broadcastStatus();
         //Do stuff before, apparently
         super.appDisconnect(conn);
@@ -84,6 +84,10 @@ public class Application extends MultiThreadedApplicationAdapter {
     public boolean roomConnect(IConnection conn, Object[] params) {
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("-----roomConnect()---------------------------");
+        for (int i=0; i<params.length; i++) {
+            Object param=params[i];
+            logger.debug("roomConnect() param["+i+"]="+param.toString());
+        }
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
         IScope scope = conn2.getScope();
@@ -96,11 +100,11 @@ public class Application extends MultiThreadedApplicationAdapter {
         logger.debug("client.getCreationTime()="+client.getCreationTime());
         logger.debug("conn="+conn);
         logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
+        logger.debug("client.getAttribute(\"userstatus\")="+client.getAttribute("userstatus"));
         //Store the person who just entered room
         Object[] justEnteredRoom = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
-        oneRow.put( "name" , client.getAttribute("name") );
+        oneRow.put( "nickname" , client.getAttribute("nickname") );
         oneRow.put( "userid" , client.getAttribute("userid") );
         justEnteredRoom[0] = oneRow;
         //Set userid of the connected user
@@ -115,7 +119,7 @@ public class Application extends MultiThreadedApplicationAdapter {
             IConnection iConnection = (IConnection)it.next( );
             //Notify existing users of this new person
             IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("personEnteredRoom" , new Object[] {justEnteredRoom} );
+            iConn.invoke("personEntersRoom" , new Object[] {justEnteredRoom} );
             //Notify person who just entered of people already here
             Object[] wasAlreadyInRoom = new Object[1];
             ObjectMap oneRow2 = new ObjectMap( );
@@ -126,7 +130,7 @@ public class Application extends MultiThreadedApplicationAdapter {
             iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
         }
         //Broadcast Status
-        conn.getClient().setAttribute("status", "InRoom");
+        conn.getClient().setAttribute("userstatus", "Online");
         PresenceHandler.broadcastStatus();
         logger.debug("-----------------------------roomConnect()--------");
         return true;
@@ -164,7 +168,7 @@ public class Application extends MultiThreadedApplicationAdapter {
             iConn.invoke("personLeavesRoom" , new Object[] {justLeftRoom} );
         }
         //Broadcast Status
-        conn.getClient().setAttribute("status", "LeftRoom");
+        conn.getClient().setAttribute("status", "Offline");
         PresenceHandler.broadcastStatus();
     }
 
