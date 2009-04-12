@@ -280,7 +280,193 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
     }
 
 
+    public static void remoteDispatchEvent(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+        Object[] out = new Object[1];
+        ObjectMap oneRow = new ObjectMap( );
+        oneRow.put( "userid" , clientWithChangedStatus.getAttribute("userid") );
+        oneRow.put( "nickname" , clientWithChangedStatus.getAttribute("nickname") );
+        oneRow.put( "roomid" , clientWithChangedStatus.getAttribute("roomid") );
+        oneRow.put( "roomname" , clientWithChangedStatus.getAttribute("roomname") );
+        oneRow.put( "userstatus" , clientWithChangedStatus.getAttribute("userstatus") );
+        oneRow.put( "event" , event );
+        oneRow.put( "arg1" , arg1 );
+        oneRow.put( "arg2" , arg2 );
+        oneRow.put( "arg3" , arg3 );
+        oneRow.put( "arg4" , arg4 );
+        oneRow.put( "arg5" , arg5 );
+        out[0] = oneRow;
+        iConnToNotify.invoke("remoteDispatchEvent" , new Object[]{out} );
+    }
 
+
+
+
+
+    public static void dispatchEventToCommaSepListOfUsers(String useridscommasep, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+        Logger logger = Logger.getLogger(PresenceHandler.class);
+        logger.debug("-----");
+        logger.debug("-----");
+        logger.debug("-----dispatchEventToCommaSepListOfUsers()---------------------------");
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        logger.debug("client="+client);
+        IScope scope = conn.getScope();
+        //Go get the global scope
+        IScope globalScope = scope.getContext().getGlobalScope();
+        //Debug
+//        logger.debug("scope="+scope);
+//        logger.debug("globalScope="+globalScope);
+//        logger.debug("client="+client);
+//        logger.debug("client.getId()="+client.getId());
+//        logger.debug("IClient.ID="+IClient.ID);
+//        logger.debug("client.getConnections()="+client.getConnections());
+//        logger.debug("client.getScopes()="+client.getScopes());
+//        logger.debug("client.getCreationTime()="+client.getCreationTime());
+//        logger.debug("conn="+conn);
+//        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
+        //Iterate connections
+        Iterator it = globalScope.getConnections();
+        while (it.hasNext()){
+            IConnection iConnection = (IConnection)it.next( );
+//            logger.debug("---iConnection="+iConnection);
+//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+            //Only broadcast to friends
+            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, useridscommasep);
+                if (isFriend){
+                    //This is a friend, update status
+                    logger.debug("-is friend, calling remoteDispatchEvent");
+                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                } else {
+                    logger.debug("-is not in comma sep list of users");
+                }
+            } else {
+                logger.debug("-userid not an int");
+            }
+        }
+        logger.debug("--------------------------dispatchEventToCommaSepListOfUsers()----");
+        logger.debug("-----");
+        logger.debug("-----");
+    }
+
+
+
+    public static void dispatchEventToUser(String useridtodispatchto, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+        Logger logger = Logger.getLogger(PresenceHandler.class);
+        logger.debug("-----");
+        logger.debug("-----");
+        logger.debug("-----dispatchEventToUser()---------------------------");
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        logger.debug("client="+client);
+        IScope scope = conn.getScope();
+        //Go get the global scope
+        IScope globalScope = scope.getContext().getGlobalScope();
+        //Debug
+//        logger.debug("scope="+scope);
+//        logger.debug("globalScope="+globalScope);
+//        logger.debug("client="+client);
+//        logger.debug("client.getId()="+client.getId());
+//        logger.debug("IClient.ID="+IClient.ID);
+//        logger.debug("client.getConnections()="+client.getConnections());
+//        logger.debug("client.getScopes()="+client.getScopes());
+//        logger.debug("client.getCreationTime()="+client.getCreationTime());
+//        logger.debug("conn="+conn);
+//        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
+        //Iterate connections
+        Iterator it = globalScope.getConnections();
+        while (it.hasNext()){
+            IConnection iConnection = (IConnection)it.next( );
+//            logger.debug("---iConnection="+iConnection);
+//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+            //Only broadcast to friends
+            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                boolean ispersontodispatchto = false;
+                if (Num.isinteger(useridtodispatchto) && Integer.parseInt(useridtodispatchto)==useridOfThisClient){
+                    ispersontodispatchto = true;
+                }
+                if (ispersontodispatchto){
+                    logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
+                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                } else {
+                    logger.debug("-is not persontodispatchto");
+                }
+            } else {
+                logger.debug("-userid not an int");
+            }
+        }
+        logger.debug("--------------------------dispatchEventToUser()----");
+        logger.debug("-----");
+        logger.debug("-----");
+    }
+
+
+    public static void dispatchEventToRoom(String roomidtodispatchto, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+        Logger logger = Logger.getLogger(PresenceHandler.class);
+        logger.debug("-----");
+        logger.debug("-----");
+        logger.debug("-----dispatchEventToRoom()---------------------------");
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        logger.debug("client="+client);
+        IScope scope = conn.getScope();
+        //Go get the global scope
+        IScope globalScope = scope.getContext().getGlobalScope();
+        //Debug
+//        logger.debug("scope="+scope);
+//        logger.debug("globalScope="+globalScope);
+//        logger.debug("client="+client);
+//        logger.debug("client.getId()="+client.getId());
+//        logger.debug("IClient.ID="+IClient.ID);
+//        logger.debug("client.getConnections()="+client.getConnections());
+//        logger.debug("client.getScopes()="+client.getScopes());
+//        logger.debug("client.getCreationTime()="+client.getCreationTime());
+//        logger.debug("conn="+conn);
+//        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
+        //Iterate connections
+        Iterator it = globalScope.getConnections();
+        while (it.hasNext()){
+            IConnection iConnection = (IConnection)it.next( );
+//            logger.debug("---iConnection="+iConnection);
+//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+            //Only broadcast to friends
+            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("roomid")))){
+                int roomidOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("roomid")));
+                boolean isinroomtodispatchto = false;
+                if (Num.isinteger(roomidtodispatchto) && Integer.parseInt(roomidtodispatchto)==roomidOfThisClient){
+                    isinroomtodispatchto = true;
+                }
+                if (isinroomtodispatchto){
+                    logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
+                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                } else {
+                    logger.debug("-is not inroomtodispatchto");
+                }
+            } else {
+                logger.debug("-roomid not an int");
+            }
+        }
+        logger.debug("--------------------------dispatchEventToRoom()----");
+        logger.debug("-----");
+        logger.debug("-----");
+    }
 
 
 }
