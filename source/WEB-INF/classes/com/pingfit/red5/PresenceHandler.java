@@ -280,7 +280,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
     }
 
 
-    public static void remoteDispatchEvent(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+    public static void callIncomingDispatchEvent(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
         Object[] out = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "userid" , clientWithChangedStatus.getAttribute("userid") );
@@ -295,7 +295,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         oneRow.put( "arg4" , arg4 );
         oneRow.put( "arg5" , arg5 );
         out[0] = oneRow;
-        iConnToNotify.invoke("remoteDispatchEvent" , new Object[]{out} );
+        iConnToNotify.invoke("incomingDispatchEvent" , new Object[]{out} );
     }
 
 
@@ -342,7 +342,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                     //This is a friend, update status
                     logger.debug("-is friend, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not in comma sep list of users");
                 }
@@ -399,7 +399,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                 if (ispersontodispatchto){
                     logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not persontodispatchto");
                 }
@@ -455,7 +455,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                 if (isinroomtodispatchto){
                     logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    remoteDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not inroomtodispatchto");
                 }
