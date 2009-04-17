@@ -152,9 +152,9 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 
     public static void broadcastStatus(){
         Logger logger = Logger.getLogger(PresenceHandler.class);
-        logger.debug("-----");
-        logger.debug("-----");
-        logger.debug("-----broadcastStatus()---------------------------");
+//        logger.debug("-----");
+//        logger.debug("-----");
+//        logger.debug("-----broadcastStatus()---------------------------");
         IConnection conn = Red5.getConnectionLocal();
         IClient client = conn.getClient();
         logger.debug("client="+client);
@@ -214,30 +214,30 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         Iterator it = globalScope.getConnections();
         while (it.hasNext()){
             IConnection iConnection = (IConnection)it.next( );
-            logger.debug("---iConnection="+iConnection);
-            logger.debug("---iConnection.getClient()="+iConnection.getClient());
-            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
-            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//            logger.debug("---iConnection="+iConnection);
+//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
             //Only broadcast to friends
             if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
                 int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
                 boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
                 if (isFriend){
                     //This is a friend, update status
-                    logger.debug("-is friend, calling presenceChange");
+                    //logger.debug("-is friend, calling presenceChange");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
                     notifyOfPresenceChange(iConnToNotify, client);
                 } else {
-                    logger.debug("-is not friend");
+                    //logger.debug("-is not friend");
                 }
             } else {
-                logger.debug("-userid not an int");
+                //logger.debug("-userid not an int");
             }
         }
-        logger.debug("--------------------------broadcastStatus()----");
-        logger.debug("-----");
-        logger.debug("-----");
+//        logger.debug("--------------------------broadcastStatus()----");
+//        logger.debug("-----");
+//        logger.debug("-----");
     }
 
     public static void notifyOfPresenceChange(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus){
@@ -280,7 +280,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
     }
 
 
-    public static void callIncomingDispatchEvent(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+    public static void callIncomingDispatchEvent(IServiceCapableConnection iConnToNotify, IClient clientWithChangedStatus, String eventtype, String arg1, String arg2, String arg3, String arg4, String arg5){
         Object[] out = new Object[1];
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "userid" , clientWithChangedStatus.getAttribute("userid") );
@@ -288,21 +288,21 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         oneRow.put( "roomid" , clientWithChangedStatus.getAttribute("roomid") );
         oneRow.put( "roomname" , clientWithChangedStatus.getAttribute("roomname") );
         oneRow.put( "userstatus" , clientWithChangedStatus.getAttribute("userstatus") );
-        oneRow.put( "event" , event );
+        oneRow.put( "eventtype" , eventtype );
         oneRow.put( "arg1" , arg1 );
         oneRow.put( "arg2" , arg2 );
         oneRow.put( "arg3" , arg3 );
         oneRow.put( "arg4" , arg4 );
         oneRow.put( "arg5" , arg5 );
         out[0] = oneRow;
-        iConnToNotify.invoke("incomingDispatchEvent" , new Object[]{out} );
+        iConnToNotify.invoke("incomingRemoteEvent" , new Object[]{out} );
     }
 
 
 
 
 
-    public static void dispatchEventToCommaSepListOfUsers(String useridscommasep, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+    public static void dispatchEventToCommaSepListOfUsers(String useridscommasep, String eventtype, String arg1, String arg2, String arg3, String arg4, String arg5){
         Logger logger = Logger.getLogger(PresenceHandler.class);
         logger.debug("-----");
         logger.debug("-----");
@@ -342,7 +342,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                     //This is a friend, update status
                     logger.debug("-is friend, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not in comma sep list of users");
                 }
@@ -357,7 +357,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 
 
 
-    public static void dispatchEventToUser(String useridtodispatchto, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+    public static void dispatchEventToUser(String useridtodispatchto, String eventtype, String arg1, String arg2, String arg3, String arg4, String arg5){
         Logger logger = Logger.getLogger(PresenceHandler.class);
         logger.debug("-----");
         logger.debug("-----");
@@ -399,7 +399,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                 if (ispersontodispatchto){
                     logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not persontodispatchto");
                 }
@@ -413,7 +413,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
     }
 
 
-    public static void dispatchEventToRoom(String roomidtodispatchto, String event, String arg1, String arg2, String arg3, String arg4, String arg5){
+    public static void dispatchEventToRoom(String roomidtodispatchto, String eventtype, String arg1, String arg2, String arg3, String arg4, String arg5){
         Logger logger = Logger.getLogger(PresenceHandler.class);
         logger.debug("-----");
         logger.debug("-----");
@@ -455,7 +455,7 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
                 if (isinroomtodispatchto){
                     logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, event, arg1, arg2, arg3, arg4, arg5);
+                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
                 } else {
                     logger.debug("-is not inroomtodispatchto");
                 }
