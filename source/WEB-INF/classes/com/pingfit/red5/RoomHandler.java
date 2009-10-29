@@ -94,6 +94,7 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
             Element element = new Element("person");
             element.addContent(nameValueElement("nickname", String.valueOf(iClient.getAttribute("nickname"))));
             element.addContent(nameValueElement("userid", String.valueOf(iClient.getAttribute("userid"))));
+            element.addContent(nameValueElement("facebookuid", String.valueOf(iClient.getAttribute("facebookuid"))));
             root.addContent(element);
         }
         return Util.jdomDocAsString(outDoc);

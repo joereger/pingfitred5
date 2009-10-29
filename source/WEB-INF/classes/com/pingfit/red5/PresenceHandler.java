@@ -50,6 +50,29 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         conn.getClient().setAttribute("friends", friendsCommaSep);
     }
 
+    public void setFriendsFacebook(String friendsFacebookCommaSep){
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        IConnection conn = Red5.getConnectionLocal();
+        IClient client = conn.getClient();
+        IScope scope = conn.getScope();
+        logger.debug("-----setFriendsFacebook()---------------------");
+        logger.debug(scope);
+        logger.debug(client);
+        logger.debug(client.getId());
+        logger.debug(IClient.ID);
+        logger.debug(client.getConnections());
+        logger.debug(client.getScopes());
+        logger.debug(client.getCreationTime());
+        logger.debug(conn);
+        logger.debug("current client.getAttribute(\"facebookfriends\")="+client.getAttribute("facebookfriends"));
+        logger.debug("incoming friendsFacebookCommaSep="+friendsFacebookCommaSep);
+        logger.debug("-------------------------------------");
+        if (friendsFacebookCommaSep==null){
+            friendsFacebookCommaSep = "";
+        }
+        conn.getClient().setAttribute("facebookfriends", friendsFacebookCommaSep);
+    }
+
     public void setStatus(String userstatus){
         Logger logger = Logger.getLogger(this.getClass().getName());
         IConnection conn = Red5.getConnectionLocal();
@@ -139,13 +162,16 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
             IConnection iConnOfFriend = (IConnection)it.next( );
             if (Num.isinteger(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")))){
                 int useridOfThisClient = Integer.parseInt(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")));
+                String facebookuidOfThisClient = String.valueOf(iConnOfFriend.getClient().getAttribute("facebookuid"));
                 boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
-                if (isFriend){
+                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                if (isFriend || isFacebookFriend){
                     logger.debug("calling presenceChange on my own conn");
                     notifyOfPresenceChange(myIConn, iConnOfFriend.getClient());
                 }
             }
         }
+        doneSendingAllStatuses(myIConn);
         logger.debug("---------------------------------sendMeStatusOfAllFriends()----");
     }
 
@@ -222,8 +248,10 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
             //Only broadcast to friends
             if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
                 int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
                 boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
-                if (isFriend){
+                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                if (isFriend || isFacebookFriend){
                     //This is a friend, update status
                     //logger.debug("-is friend, calling presenceChange");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
@@ -248,8 +276,16 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         oneRow.put( "roomid" , clientWithChangedStatus.getAttribute("roomid") );
         oneRow.put( "roomname" , clientWithChangedStatus.getAttribute("roomname") );
         oneRow.put( "userstatus" , clientWithChangedStatus.getAttribute("userstatus") );
+        oneRow.put( "facebookuid" , clientWithChangedStatus.getAttribute("facebookuid") );
         out[0] = oneRow;
         iConnToNotify.invoke("presenceChange" , new Object[]{out} );
+    }
+
+    public static void doneSendingAllStatuses(IServiceCapableConnection iConnToNotify){
+        Object[] out = new Object[1];
+        ObjectMap oneRow = new ObjectMap( );
+        out[0] = oneRow;
+        iConnToNotify.invoke("doneSendingAllStatuses" , new Object[]{out} );
     }
 
 
@@ -272,6 +308,26 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
             for (int i=0; i<split.length; i++) {
                 String friendUserid = split[i];
                 if (friendUserid.equals(String.valueOf(userid))){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    public static boolean isFacebookFriend(String facebookuid, String facebookfriends){
+        if (facebookuid==null || facebookuid.equals("")){
+            return false;
+        }
+        if (facebookfriends==null || facebookfriends.equals("null") || facebookfriends.equals("")){
+            return false;
+        }
+        //@todo optimize isFriend... will be called a lot... hold String[] in client attribute?
+        String[] split = facebookfriends.split(",");
+        if (split.length>0){
+            for (int i=0; i<split.length; i++) {
+                String friendUserid = split[i];
+                if (friendUserid.equals(facebookuid)){
                     return true;
                 }
             }
@@ -337,8 +393,10 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
             //Only broadcast to friends
             if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
                 int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
                 boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, useridscommasep);
-                if (isFriend){
+                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                if (isFriend || isFacebookFriend){
                     //This is a friend, update status
                     logger.debug("-is friend, calling remoteDispatchEvent");
                     IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;

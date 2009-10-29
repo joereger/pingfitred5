@@ -74,6 +74,16 @@ public class Application extends MultiThreadedApplicationAdapter {
             roomname = String.valueOf(params[5]);
         }
         conn.getClient().setAttribute("roomname", roomname);
+        String facebookfriends = "";
+        if (params!=null && params.length>=7 && params[6]!=null && !String.valueOf(params[6]).equals("")){
+            facebookfriends = String.valueOf(params[6]);
+        }
+        conn.getClient().setAttribute("facebookfriends", facebookfriends);
+        String facebookuid = "";
+        if (params!=null && params.length>=8 && params[7]!=null && !String.valueOf(params[7]).equals("")){
+            facebookuid = String.valueOf(params[7]);
+        }
+        conn.getClient().setAttribute("facebookuid", facebookuid);
         //Broadcast Status
         PresenceHandler.broadcastStatus();
         return super.appConnect(conn, params);
@@ -116,6 +126,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "nickname" , client.getAttribute("nickname") );
         oneRow.put( "userid" , client.getAttribute("userid") );
+        oneRow.put( "facebookuid" , client.getAttribute("facebookuid") );
         justEnteredRoom[0] = oneRow;
         //Set userid of the connected user
         int useridOfJoiner = 0;
@@ -135,6 +146,7 @@ public class Application extends MultiThreadedApplicationAdapter {
             ObjectMap oneRow2 = new ObjectMap( );
             oneRow2.put( "nickname" , iConn.getClient().getAttribute("nickname") );
             oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
+            oneRow.put( "facebookuid" ,iConn.getClient().getAttribute("facebookuid") );
             wasAlreadyInRoom[0] = oneRow2;
             IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
             iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
@@ -167,6 +179,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         ObjectMap oneRow = new ObjectMap( );
         oneRow.put( "nickname" , client.getAttribute("nickname") );
         oneRow.put( "userid" , client.getAttribute("userid") );
+        oneRow.put( "facebookuid" , client.getAttribute("facebookuid") );
         justLeftRoom[0] = oneRow;
         //Iterate connections in this scope
         Iterator it = scope.getConnections();
