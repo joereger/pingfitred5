@@ -118,6 +118,11 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         if (hasChanged){ broadcastStatus(); logger.debug("setRoom() hasChanged, status broadcast");} else {logger.debug("setRoom() !hasChanged");}
     }
 
+    public void heartbeat(String msg){
+        Logger logger = Logger.getLogger(this.getClass().getName());
+        logger.debug("heartbeat() msg="+msg);
+    }
+
     public void setRoomname(String roomname){
         Logger logger = Logger.getLogger(this.getClass().getName());
         IConnection conn = Red5.getConnectionLocal();
