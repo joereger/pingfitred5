@@ -14,8 +14,7 @@ import org.jdom.Text;
 import org.jdom.output.DOMOutputter;
 import org.w3c.dom.Document;
 
-import java.util.Iterator;
-import java.util.ArrayList;
+import java.util.*;
 
 import com.pingfit.util.Num;
 import com.pingfit.util.Util;
@@ -29,6 +28,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         //System.out.println("pingFitRed5 Application.appStart() called");
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("pingFitRed5 Application.appStart() called");
+        System.out.print("pingFitRed5 Application.appStart() called");
         //Object handler = new PresenceHandler(app);
         //app.registerServiceHandler("presence", handler);
         appScope = app;
@@ -39,9 +39,10 @@ public class Application extends MultiThreadedApplicationAdapter {
 	public boolean appConnect(IConnection conn, Object[] params) {
         Logger logger = Logger.getLogger(this.getClass().getName());
         logger.debug("appConnect() called");
+        System.out.print("appConnect() called");
         for (int i=0; i<params.length; i++) {
             Object param=params[i];
-            logger.debug("appConnect() param["+i+"]="+param.toString());
+            logger.debug("appConnect() param["+i+"]="+String.valueOf(param));
         }
         //Set attributes that'll follow this IClient around the system
         int userid = 0;
@@ -106,7 +107,7 @@ public class Application extends MultiThreadedApplicationAdapter {
         logger.debug("-----roomConnect()---------------------------");
         for (int i=0; i<params.length; i++) {
             Object param=params[i];
-            logger.debug("roomConnect() param["+i+"]="+param.toString());
+            logger.debug("roomConnect() param["+i+"]="+String.valueOf(param));
         }
         IConnection conn2 = Red5.getConnectionLocal();
         IClient client = conn2.getClient();
@@ -134,23 +135,44 @@ public class Application extends MultiThreadedApplicationAdapter {
             useridOfJoiner = Integer.parseInt(String.valueOf(client.getAttribute("userid")));
         }
         //Iterate connections in this scope
-        Iterator it = scope.getConnections();
-        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-            //Notify existing users of this new person
-            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("personEntersRoom" , new Object[] {justEnteredRoom} );
-            //Notify person who just entered of people already here
-            Object[] wasAlreadyInRoom = new Object[1];
-            ObjectMap oneRow2 = new ObjectMap( );
-            oneRow2.put( "nickname" , iConn.getClient().getAttribute("nickname") );
-            oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
-            oneRow.put( "facebookuid" ,iConn.getClient().getAttribute("facebookuid") );
-            wasAlreadyInRoom[0] = oneRow2;
-            IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
-            iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
+        Collection<Set<IConnection>> conns = scope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                //Notify existing users of this new person
+                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+                iConn.invoke("personEntersRoom" , new Object[] {justEnteredRoom} );
+                //Notify person who just entered of people already here
+                Object[] wasAlreadyInRoom = new Object[1];
+                ObjectMap oneRow2 = new ObjectMap( );
+                oneRow2.put( "nickname" , iConn.getClient().getAttribute("nickname") );
+                oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
+                oneRow.put( "facebookuid" ,iConn.getClient().getAttribute("facebookuid") );
+                wasAlreadyInRoom[0] = oneRow2;
+                IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
+                iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
+            }
         }
+
+//        Iterator it = scope.getConnections();
+//        Set conns = scope.getConnections();
+//        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+//            //Notify existing users of this new person
+//            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+//            iConn.invoke("personEntersRoom" , new Object[] {justEnteredRoom} );
+//            //Notify person who just entered of people already here
+//            Object[] wasAlreadyInRoom = new Object[1];
+//            ObjectMap oneRow2 = new ObjectMap( );
+//            oneRow2.put( "nickname" , iConn.getClient().getAttribute("nickname") );
+//            oneRow2.put( "userid" , iConn.getClient().getAttribute("userid") );
+//            oneRow.put( "facebookuid" ,iConn.getClient().getAttribute("facebookuid") );
+//            wasAlreadyInRoom[0] = oneRow2;
+//            IServiceCapableConnection iConn2 = (IServiceCapableConnection)conn2;
+//            iConn2.invoke("personEntersRoom" , new Object[] {wasAlreadyInRoom} );
+//        }
         //Broadcast Status
         conn.getClient().setAttribute("userstatus", "Online");
         PresenceHandler.broadcastStatus();
@@ -182,14 +204,26 @@ public class Application extends MultiThreadedApplicationAdapter {
         oneRow.put( "facebookuid" , client.getAttribute("facebookuid") );
         justLeftRoom[0] = oneRow;
         //Iterate connections in this scope
-        Iterator it = scope.getConnections();
-        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-            //Notify existing users of this new person
-            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-            iConn.invoke("personLeavesRoom" , new Object[] {justLeftRoom} );
+        Collection<Set<IConnection>> conns = scope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                //Notify existing users of this new person
+                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+                iConn.invoke("personLeavesRoom" , new Object[] {justLeftRoom} );
+            }
         }
+
+
+//        Iterator it = scope.getConnections();
+//        logger.debug("scope.getConnections().hasNext()="+scope.getConnections().hasNext());
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+//            //Notify existing users of this new person
+//            IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+//            iConn.invoke("personLeavesRoom" , new Object[] {justLeftRoom} );
+//        }
         //Broadcast Status
         conn.getClient().setAttribute("status", "Offline");
         PresenceHandler.broadcastStatus();

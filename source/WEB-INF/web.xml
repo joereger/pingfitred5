@@ -10,18 +10,18 @@
 		<param-value>/pingFitRed5</param-value>
 	</context-param>
 
-    <listener>
-      <listener-class>com.pingfit.startup.ApplicationStartup</listener-class>
-    </listener>
+    <!--<listener>-->
+      <!--<listener-class>com.pingfit.startup.ApplicationStartup</listener-class>-->
+    <!--</listener>-->
 
-    <filter>
-        <filter-name>HibernateSessionCloser</filter-name>
-        <filter-class>com.pingfit.dao.hibernate.HibernateSessionCloser</filter-class>
-    </filter>
-    <filter-mapping>
-        <filter-name>HibernateSessionCloser</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
+    <!--<filter>-->
+        <!--<filter-name>HibernateSessionCloser</filter-name>-->
+        <!--<filter-class>com.pingfit.dao.hibernate.HibernateSessionCloser</filter-class>-->
+    <!--</filter>-->
+    <!--<filter-mapping>-->
+        <!--<filter-name>HibernateSessionCloser</filter-name>-->
+        <!--<url-pattern>/*</url-pattern>-->
+    <!--</filter-mapping>-->
 
     <welcome-file-list>
         <welcome-file>index.jsp</welcome-file>

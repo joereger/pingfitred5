@@ -39,7 +39,7 @@ public class InstanceProperties {
     private static boolean haveNewConfigToTest = false;
     private static boolean haveAttemptedToLoadDefaultPropsFile = false;
     private static String dbPropsInternalFilename = WebAppRootDir.getWebAppRootPath() + "conf"+File.separatorChar+"instance.props";
-    private static String dbPropsExternalFilename = "pingFit-"+WebAppRootDir.getUniqueContextId()+"-dbconfig.txt";
+    private static String dbPropsExternalFilename = "pingFitRed5-"+WebAppRootDir.getUniqueContextId()+"-dbconfig.txt";
 
     public static void load(){
         Logger logger = Logger.getLogger(InstanceProperties.class);
@@ -86,7 +86,7 @@ public class InstanceProperties {
 
     public static void loadPropsFile(Properties properties){
         try{
-            dbConnectionUrl = properties.getProperty("dbConnectionUrl", "jdbc:mysql://localhost:3306/dneero?autoReconnect=true");
+            dbConnectionUrl = properties.getProperty("dbConnectionUrl", "jdbc:mysql://localhost:3306/pingfitred5?autoReconnect=true");
             dbUsername = properties.getProperty("dbUsername", "username");
             //DesEncrypter encrypter2 = new DesEncrypter(passPhrase);
             //dbPassword = encrypter2.decrypt(properties.getProperty("dbPassword", "password"));

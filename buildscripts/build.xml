@@ -41,6 +41,9 @@
       <fileset dir="${tomcat.install.directory}/lib">
         <include name="**/*.jar" />
       </fileset>
+      <fileset dir="C:\Superfly\SourceIdeaProjects\pingFitRed5\red5libs">
+        <include name="**/*.jar" />
+      </fileset>
       <pathelement path="${javasrc}" />
   </path>
 

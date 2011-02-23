@@ -13,8 +13,10 @@ import org.jdom.Text;
 import org.jdom.output.DOMOutputter;
 import org.w3c.dom.Document;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Set;
 
 import com.pingfit.util.Num;
 import com.pingfit.util.Util;
@@ -61,13 +63,23 @@ public class RoomHandler extends MultiThreadedApplicationAdapter {
             oneRow.put( "userid" , client.getAttribute("userid") );
             out[0] = oneRow;
             //Iterate connections in this scope
-            Iterator it = scope.getConnections();
-            while (it.hasNext()){
-                IConnection iConnection = (IConnection)it.next( );
-                logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
-                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
-                iConn.invoke("messageToRoom" , new Object[] {out} );
+            Collection<Set<IConnection>> conns = scope.getConnections();
+            for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+                Set<IConnection> iConnections = iterator.next();
+                for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                    IConnection iConnection = iConnectionIterator.next();
+                    logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
+                    IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+                    iConn.invoke("messageToRoom" , new Object[] {out} );
+                }
             }
+//            Iterator it = scope.getConnections();
+//            while (it.hasNext()){
+//                IConnection iConnection = (IConnection)it.next( );
+//                logger.debug("sending msg to iConnection.getHost()="+iConnection.getHost());
+//                IServiceCapableConnection iConn = (IServiceCapableConnection)iConnection;
+//                iConn.invoke("messageToRoom" , new Object[] {out} );
+//            }
         }
     }
 

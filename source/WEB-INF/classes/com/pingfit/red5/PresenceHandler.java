@@ -13,8 +13,10 @@ import org.jdom.Text;
 import org.jdom.output.DOMOutputter;
 import org.w3c.dom.Document;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Set;
 
 import com.pingfit.util.Num;
 import com.pingfit.util.Util;
@@ -162,20 +164,37 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         //Get global scope
         IScope globalScope = scope.getContext().getGlobalScope();
         //Iterate connections in global scope
-        Iterator it = globalScope.getConnections();
-        while (it.hasNext()){
-            IConnection iConnOfFriend = (IConnection)it.next( );
-            if (Num.isinteger(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")))){
-                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")));
-                String facebookuidOfThisClient = String.valueOf(iConnOfFriend.getClient().getAttribute("facebookuid"));
-                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
-                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
-                if (isFriend || isFacebookFriend){
-                    logger.debug("calling presenceChange on my own conn");
-                    notifyOfPresenceChange(myIConn, iConnOfFriend.getClient());
+        Collection<Set<IConnection>> conns = globalScope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnOfFriend = iConnectionIterator.next();
+                if (Num.isinteger(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")))){
+                    int useridOfThisClient = Integer.parseInt(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")));
+                    String facebookuidOfThisClient = String.valueOf(iConnOfFriend.getClient().getAttribute("facebookuid"));
+                    boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
+                    boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                    if (isFriend || isFacebookFriend){
+                        logger.debug("calling presenceChange on my own conn");
+                        notifyOfPresenceChange(myIConn, iConnOfFriend.getClient());
+                    }
                 }
             }
         }
+//        Iterator it = globalScope.getConnections();
+//        while (it.hasNext()){
+//            IConnection iConnOfFriend = (IConnection)it.next( );
+//            if (Num.isinteger(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")))){
+//                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnOfFriend.getClient().getAttribute("userid")));
+//                String facebookuidOfThisClient = String.valueOf(iConnOfFriend.getClient().getAttribute("facebookuid"));
+//                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
+//                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+//                if (isFriend || isFacebookFriend){
+//                    logger.debug("calling presenceChange on my own conn");
+//                    notifyOfPresenceChange(myIConn, iConnOfFriend.getClient());
+//                }
+//            }
+//        }
         doneSendingAllStatuses(myIConn);
         logger.debug("---------------------------------sendMeStatusOfAllFriends()----");
     }
@@ -242,32 +261,57 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
         //Create the record
 
         //Iterate connections
-        Iterator it = globalScope.getConnections();
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-//            logger.debug("---iConnection="+iConnection);
-//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
-//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
-//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-            //Only broadcast to friends
-            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
-                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
-                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
-                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
-                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
-                if (isFriend || isFacebookFriend){
-                    //This is a friend, update status
-                    //logger.debug("-is friend, calling presenceChange");
-                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    notifyOfPresenceChange(iConnToNotify, client);
+        Collection<Set<IConnection>> conns = globalScope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                    int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                    String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
+                    boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
+                    boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                    if (isFriend || isFacebookFriend){
+                        //This is a friend, update status
+                        //logger.debug("-is friend, calling presenceChange");
+                        IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                        notifyOfPresenceChange(iConnToNotify, client);
+                    } else {
+                        //logger.debug("-is not friend");
+                    }
                 } else {
-                    //logger.debug("-is not friend");
+                    //logger.debug("-userid not an int");
                 }
-            } else {
-                //logger.debug("-userid not an int");
             }
         }
+
+
+//        Iterator it = globalScope.getConnections();
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+////            logger.debug("---iConnection="+iConnection);
+////            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+////            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+////            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+////            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//            //Only broadcast to friends
+//            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+//                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+//                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
+//                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, String.valueOf(client.getAttribute("friends")));
+//                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+//                if (isFriend || isFacebookFriend){
+//                    //This is a friend, update status
+//                    //logger.debug("-is friend, calling presenceChange");
+//                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+//                    notifyOfPresenceChange(iConnToNotify, client);
+//                } else {
+//                    //logger.debug("-is not friend");
+//                }
+//            } else {
+//                //logger.debug("-userid not an int");
+//            }
+//        }
 //        logger.debug("--------------------------broadcastStatus()----");
 //        logger.debug("-----");
 //        logger.debug("-----");
@@ -387,32 +431,57 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 //        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
 //        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
         //Iterate connections
-        Iterator it = globalScope.getConnections();
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-//            logger.debug("---iConnection="+iConnection);
-//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
-//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
-//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-            //Only broadcast to friends
-            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
-                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
-                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
-                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, useridscommasep);
-                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
-                if (isFriend || isFacebookFriend){
-                    //This is a friend, update status
-                    logger.debug("-is friend, calling remoteDispatchEvent");
-                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+        Collection<Set<IConnection>> conns = globalScope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                    int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                    String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
+                    boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, useridscommasep);
+                    boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+                    if (isFriend || isFacebookFriend){
+                        //This is a friend, update status
+                        logger.debug("-is friend, calling remoteDispatchEvent");
+                        IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                        callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+                    } else {
+                        logger.debug("-is not in comma sep list of users");
+                    }
                 } else {
-                    logger.debug("-is not in comma sep list of users");
+                    logger.debug("-userid not an int");
                 }
-            } else {
-                logger.debug("-userid not an int");
             }
         }
+
+
+//        Iterator it = globalScope.getConnections();
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+////            logger.debug("---iConnection="+iConnection);
+////            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+////            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+////            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+////            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//            //Only broadcast to friends
+//            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+//                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+//                String facebookuidOfThisClient = String.valueOf(iConnection.getClient().getAttribute("facebookuid"));
+//                boolean isFriend = PresenceHandler.isFriend(useridOfThisClient, useridscommasep);
+//                boolean isFacebookFriend = PresenceHandler.isFacebookFriend(facebookuidOfThisClient, String.valueOf(client.getAttribute("facebookfriends")));
+//                if (isFriend || isFacebookFriend){
+//                    //This is a friend, update status
+//                    logger.debug("-is friend, calling remoteDispatchEvent");
+//                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+//                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+//                } else {
+//                    logger.debug("-is not in comma sep list of users");
+//                }
+//            } else {
+//                logger.debug("-userid not an int");
+//            }
+//        }
         logger.debug("--------------------------dispatchEventToCommaSepListOfUsers()----");
         logger.debug("-----");
         logger.debug("-----");
@@ -444,32 +513,55 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 //        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
 //        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
         //Iterate connections
-        Iterator it = globalScope.getConnections();
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-//            logger.debug("---iConnection="+iConnection);
-//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
-//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
-//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-            //Only broadcast to friends
-            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
-                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
-                boolean ispersontodispatchto = false;
-                if (Num.isinteger(useridtodispatchto) && Integer.parseInt(useridtodispatchto)==useridOfThisClient){
-                    ispersontodispatchto = true;
-                }
-                if (ispersontodispatchto){
-                    logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
-                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+        Collection<Set<IConnection>> conns = globalScope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+                    int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+                    boolean ispersontodispatchto = false;
+                    if (Num.isinteger(useridtodispatchto) && Integer.parseInt(useridtodispatchto)==useridOfThisClient){
+                        ispersontodispatchto = true;
+                    }
+                    if (ispersontodispatchto){
+                        logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
+                        IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                        callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+                    } else {
+                        logger.debug("-is not persontodispatchto");
+                    }
                 } else {
-                    logger.debug("-is not persontodispatchto");
+                    logger.debug("-userid not an int");
                 }
-            } else {
-                logger.debug("-userid not an int");
             }
         }
+//        Iterator it = globalScope.getConnections();
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+////            logger.debug("---iConnection="+iConnection);
+////            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+////            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+////            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+////            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//            //Only broadcast to friends
+//            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("userid")))){
+//                int useridOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("userid")));
+//                boolean ispersontodispatchto = false;
+//                if (Num.isinteger(useridtodispatchto) && Integer.parseInt(useridtodispatchto)==useridOfThisClient){
+//                    ispersontodispatchto = true;
+//                }
+//                if (ispersontodispatchto){
+//                    logger.debug("-ispersontodispatchto, calling remoteDispatchEvent");
+//                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+//                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+//                } else {
+//                    logger.debug("-is not persontodispatchto");
+//                }
+//            } else {
+//                logger.debug("-userid not an int");
+//            }
+//        }
         logger.debug("--------------------------dispatchEventToUser()----");
         logger.debug("-----");
         logger.debug("-----");
@@ -500,32 +592,56 @@ public class PresenceHandler extends MultiThreadedApplicationAdapter {
 //        logger.debug("client.getAttribute(\"friends\")="+client.getAttribute("friends"));
 //        logger.debug("client.getAttribute(\"status\")="+client.getAttribute("status"));
         //Iterate connections
-        Iterator it = globalScope.getConnections();
-        while (it.hasNext()){
-            IConnection iConnection = (IConnection)it.next( );
-//            logger.debug("---iConnection="+iConnection);
-//            logger.debug("---iConnection.getClient()="+iConnection.getClient());
-//            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
-//            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
-//            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
-            //Only broadcast to friends
-            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("roomid")))){
-                int roomidOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("roomid")));
-                boolean isinroomtodispatchto = false;
-                if (Num.isinteger(roomidtodispatchto) && Integer.parseInt(roomidtodispatchto)==roomidOfThisClient){
-                    isinroomtodispatchto = true;
-                }
-                if (isinroomtodispatchto){
-                    logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
-                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
-                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+        Collection<Set<IConnection>> conns = globalScope.getConnections();
+        for (Iterator<Set<IConnection>> iterator = conns.iterator(); iterator.hasNext();) {
+            Set<IConnection> iConnections = iterator.next();
+            for (Iterator<IConnection> iConnectionIterator = iConnections.iterator(); iConnectionIterator.hasNext();) {
+                IConnection iConnection = iConnectionIterator.next();
+                    if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("roomid")))){
+                    int roomidOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("roomid")));
+                    boolean isinroomtodispatchto = false;
+                    if (Num.isinteger(roomidtodispatchto) && Integer.parseInt(roomidtodispatchto)==roomidOfThisClient){
+                        isinroomtodispatchto = true;
+                    }
+                    if (isinroomtodispatchto){
+                        logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
+                        IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+                        callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+                    } else {
+                        logger.debug("-is not inroomtodispatchto");
+                    }
                 } else {
-                    logger.debug("-is not inroomtodispatchto");
+                    logger.debug("-roomid not an int");
                 }
-            } else {
-                logger.debug("-roomid not an int");
             }
         }
+//
+//        Iterator it = globalScope.getConnections();
+//        while (it.hasNext()){
+//            IConnection iConnection = (IConnection)it.next( );
+////            logger.debug("---iConnection="+iConnection);
+////            logger.debug("---iConnection.getClient()="+iConnection.getClient());
+////            logger.debug("---iConnection.getClient().getAttribute(\"userid\")="+iConnection.getClient().getAttribute("userid"));
+////            logger.debug("---iConnection.getClient().getAttribute(\"status\")="+iConnection.getClient().getAttribute("status"));
+////            logger.debug("---client.getAttribute(\"friends\")="+client.getAttribute("friends"));
+//            //Only broadcast to friends
+//            if (Num.isinteger(String.valueOf(iConnection.getClient().getAttribute("roomid")))){
+//                int roomidOfThisClient = Integer.parseInt(String.valueOf(iConnection.getClient().getAttribute("roomid")));
+//                boolean isinroomtodispatchto = false;
+//                if (Num.isinteger(roomidtodispatchto) && Integer.parseInt(roomidtodispatchto)==roomidOfThisClient){
+//                    isinroomtodispatchto = true;
+//                }
+//                if (isinroomtodispatchto){
+//                    logger.debug("-isinroomtodispatchto, calling remoteDispatchEvent");
+//                    IServiceCapableConnection iConnToNotify = (IServiceCapableConnection)iConnection;
+//                    callIncomingDispatchEvent(iConnToNotify, client, eventtype, arg1, arg2, arg3, arg4, arg5);
+//                } else {
+//                    logger.debug("-is not inroomtodispatchto");
+//                }
+//            } else {
+//                logger.debug("-roomid not an int");
+//            }
+//        }
         logger.debug("--------------------------dispatchEventToRoom()----");
         logger.debug("-----");
         logger.debug("-----");
